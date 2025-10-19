@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner para PDF - Digitalize Documentos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .page-container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+        
+        .ad-sidebar {
+            width: 160px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .ad-unit {
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .ad-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .ad-placeholder {
+            width: 100%;
+            height: 100%;
+            background-color: #f5f5f5;
+            border: 1px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .ad-horizontal {
+            width: 100%;
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .ad-horizontal .ad-placeholder {
+            height: 90px;
+        }
+        
+        .container {
+            flex: 1;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #2575fc, #6a11cb);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .app-content {
+            padding: 30px;
+        }
+        
+        .camera-section {
+            margin-bottom: 30px;
+        }
+        
+        .video-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        #video {
+            width: 100%;
+            display: block;
+            background-color: #f0f0f0;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .primary-btn {
+            background: linear-gradient(to right, #2575fc, #6a11cb);
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+        }
+        
+        .secondary-btn {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .preview-section {
+            margin-top: 40px;
+            display: none;
+        }
+        
+        .preview-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2575fc;
+            font-size: 1.5rem;
+        }
+        
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .preview-item {
+            width: 200px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .preview-item img {
+            width: 100%;
+            display: block;
+        }
+        
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+        
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        
+        .instructions h3 {
+            color: #2575fc;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: #777;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 1200px) {
+            .ad-sidebar {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .app-content {
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Barra lateral esquerda para anúncios -->
+        <div class="ad-sidebar">
+            <div class="ad-unit">
+                <div class="ad-label">Publicidade</div>
+                <div class="ad-placeholder">
+                    Espaço para anúncio<br>(160x600)
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo principal do aplicativo -->
+        <div class="container">
+            <header>
+                <h1>Scanner para PDF</h1>
+                <p class="subtitle">Digitalize documentos e converta para PDF facilmente</p>
+            </header>
+            
+            <div class="app-content">
+                <div class="camera-section">
+                    <div class="video-container">
+                        <video id="video" autoplay playsinline></video>
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="start-camera" class="primary-btn">
+                            <i>📷</i> Iniciar Câmera
+                        </button>
+                        <button id="capture" class="primary-btn" disabled>
+                            <i>📸</i> Capturar Imagem
+                        </button>
+                        <button id="reset" class="secondary-btn" disabled>
+                            <i>🔄</i> Reiniciar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="preview-section" id="preview-section">
+                    <h2 class="preview-title">Pré-visualização das Imagens</h2>
+                    
+                    <div class="preview-container" id="preview-container">
+                        <div class="empty-state">
+                            <i>📄</i>
+                            <p>Nenhuma imagem capturada ainda</p>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="add-page" class="primary-btn">
+                            <i>➕</i> Adicionar Mais Páginas
+                        </button>
+                        <button id="generate-pdf" class="primary-btn">
+                            <i>📄</i> Gerar PDF
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="instructions">
+                    <h3>Como usar:</h3>
+                    <ol>
+                        <li>Clique em "Iniciar Câmera" para ativar a câmera do seu dispositivo.</li>
+                        <li>Posicione o documento que deseja escanear em frente à câmera.</li>
+                        <li>Clique em "Capturar Imagem" para adicionar uma página ao seu documento.</li>
+                        <li>Repita o processo para adicionar mais páginas, se necessário.</li>
+                        <li>Clique em "Gerar PDF" para baixar o documento final.</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <footer>
+                <p>Scanner para PDF &copy; 2023 - Aplicativo Web</p>
+            </footer>
+        </div>
+        
+        <!-- Barra lateral direita para anúncios -->
+        <div class="ad-sidebar">
+            <div class="ad-unit">
+                <div class="ad-label">Publicidade</div>
+                <div class="ad-placeholder">
+                    Espaço para anúncio<br>(160x600)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Anúncio horizontal no rodapé -->
+    <div class="ad-horizontal">
+        <div class="ad-label">Publicidade</div>
+        <div class="ad-placeholder">
+            Espaço para anúncio horizontal (728x90)
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos do DOM
+            const video = document.getElementById('video');
+            const startCameraBtn = document.getElementById('start-camera');
+            const captureBtn = document.getElementById('capture');
+            const resetBtn = document.getElementById('reset');
+            const previewSection = document.getElementById('preview-section');
+            const previewContainer = document.getElementById('preview-container');
+            const addPageBtn = document.getElementById('add-page');
+            const generatePdfBtn = document.getElementById('generate-pdf');
+            
+            let stream = null;
+            let capturedImages = [];
+            
+            // Iniciar câmera
+            startCameraBtn.addEventListener('click', async function() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'environment' } 
+                    });
+                    video.srcObject = stream;
+                    captureBtn.disabled = false;
+                    resetBtn.disabled = false;
+                    startCameraBtn.disabled = true;
+                    startCameraBtn.textContent = 'Câmera Ativa';
+                } catch (err) {
+                    alert('Erro ao acessar a câmera: ' + err.message);
+                }
+            });
+            
+            // Capturar imagem
+            captureBtn.addEventListener('click', function() {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                
+                // Definir dimensões do canvas igual ao vídeo
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                // Desenhar o frame atual do vídeo no canvas
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Converter canvas para imagem
+                const imageDataUrl = canvas.toDataURL('image/jpeg');
+                capturedImages.push(imageDataUrl);
+                
+                // Atualizar pré-visualização
+                updatePreview();
+                
+                // Mostrar seção de pré-visualização
+                previewSection.style.display = 'block';
+            });
+            
+            // Atualizar pré-visualização
+            function updatePreview() {
+                previewContainer.innerHTML = '';
+                
+                if (capturedImages.length === 0) {
+                    previewContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i>📄</i>
+                            <p>Nenhuma imagem capturada ainda</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                capturedImages.forEach((image, index) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    
+                    previewItem.innerHTML = `
+                        <img src="${image}" alt="Página ${index + 1}">
+                        <button class="remove-btn" data-index="${index}">×</button>
+                    `;
+                    
+                    previewContainer.appendChild(previewItem);
+                });
+                
+                // Adicionar event listeners aos botões de remover
+                document.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        capturedImages.splice(index, 1);
+                        updatePreview();
+                    });
+                });
+            }
+            
+            // Adicionar mais páginas
+            addPageBtn.addEventListener('click', function() {
+                // A câmera já está ativa, apenas focar no botão de captura
+                captureBtn.focus();
+            });
+            
+            // Gerar PDF
+            generatePdfBtn.addEventListener('click', function() {
+                if (capturedImages.length === 0) {
+                    alert('Nenhuma imagem capturada para gerar PDF!');
+                    return;
+                }
+                
+                // Usar jsPDF para criar o PDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+                
+                // Adicionar cada imagem ao PDF
+                capturedImages.forEach((image, index) => {
+                    if (index > 0) {
+                        pdf.addPage();
+                    }
+                    
+                    // Obter dimensões da imagem
+                    const imgProps = pdf.getImageProperties(image);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    
+                    // Adicionar imagem ao PDF
+                    pdf.addImage(image, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                });
+                
+                // Baixar o PDF
+                pdf.save('documento-escaneado.pdf');
+            });
+            
+            // Reiniciar
+            resetBtn.addEventListener('click', function() {
+                // Parar a câmera
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Limpar dados
+                capturedImages = [];
+                video.srcObject = null;
+                
+                // Resetar UI
+                previewSection.style.display = 'none';
+                captureBtn.disabled = true;
+                resetBtn.disabled = true;
+                startCameraBtn.disabled = false;
+                startCameraBtn.textContent = '📷 Iniciar Câmera';
+            });
+        });
+    </script>
+</body>
+</html>
